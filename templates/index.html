@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Itinerary Planner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #000;
+            color: #fff;
+        }
+        h1 {
+            color: #ffffff;
+            text-align: center;
+        }
+        form {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 2px solid #3806cf;
+            border-radius: 8px;
+            background-color: #1c1c1c;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        input, textarea {
+            width: 96%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 2px solid #04d400;
+            border-radius: 5px;
+            background-color: #333;
+            color: #fff;
+        }
+        input::placeholder, textarea::placeholder {
+            color: #aba8a8;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background-color: #c31906;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #ea9389;
+        }
+        .chat-container {
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px solid #03009c;
+            border-radius: 8px;
+            background-color: #1c1c1c;
+        }
+        .chat-box {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 2px solid #04b50d;
+            padding: 10px;
+            background-color: #333;
+        }
+        .chat-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 2px solid #b20876;
+            background-color: #333;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .response {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 5px;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <h1>TRAVEL ITINERARY PLANNER</h1>
+    <form action="/" method="post">
+        <label for="destination">Destination:</label>
+        <input type="text" id="destination" name="destination" placeholder="Enter destination (e.g., India, France, etc.)" required>
+
+        <label for="budget">Budget:</label>
+        <input type="text" id="budget" name="budget" placeholder="Enter your budget (e.g., $1000)" required>
+
+        <label for="duration">Duration (in days):</label>
+        <input type="number" id="duration" name="duration" placeholder="Enter duration in days (e.g., 7)" required>
+
+        <label for="preferences">Preferences:</label>
+        <textarea id="preferences" name="preferences" rows="5" placeholder="Enter your preferences (e.g., sightseeing, adventure, food tours)"></textarea>
+
+        <button type="submit">Generate Itinerary</button>
+    </form>
+
+    {% if itinerary %}
+        <h2>Your Travel Itinerary</h2>
+        <div style="background-color: #222; padding: 15px; border-radius: 8px; color: #ffffff; line-height: 1.8;">
+            <h3>Destination:</h3>
+            <p>{{ destination }}</p>
+
+            <h3>Budget:</h3>
+            <p>{{ budget }}</p>
+
+            <h3>Duration:</h3>
+            <p>{{ duration }} days</p>
+
+            <h3>Detailed Itinerary:</h3>
+            <ul>
+                {% for day in itinerary.split('\n') %}
+                    <li>{{ day }}</li>
+                {% endfor %}
+            </ul>
+
+            <!-- Download Button -->
+            <a href="/download_itinerary">
+                <button type="button">Download Itinerary</button>
+            </a>
+        </div>
+    {% elif error %}
+        <div style="color: #e74c3c; text-align: center;">{{ error }}</div>
+    {% endif %}
+
+    <div class="chat-container">
+        <h3 style="color: #ffffff;">Chatbot: Ask me more about your trip!</h3>
+        <div class="chat-box" id="chatBox"></div>
+        <input type="text" id="userMessage" class="chat-input" placeholder="Ask me anything...">
+        <button type="button" onclick="sendChat()">Send</button>
+    </div>
+
+    <script>
+        let chatMessages = [];
+
+        function sendChat() {
+            const message = document.getElementById("userMessage").value;
+            if (message.trim() === "") return;
+
+            chatMessages.push({ role: 'user', content: message });
+            updateChatBox();
+
+            document.getElementById("userMessage").value = "";
+
+            // Pass the destination dynamically from the page to the API
+            const destination = "{{ destination }}";  // This will be populated by Flask at render time
+
+            fetch(`/chat?destination=${encodeURIComponent(destination)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatMessages.push({ role: 'bot', content: data.response });
+                updateChatBox();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function updateChatBox() {
+            const chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML = chatMessages.map(msg => {
+                return `<div class="response"><strong>${msg.role === 'user' ? 'You' : 'Bot'}:</strong> ${msg.content}</div>`;
+            }).join("");
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
