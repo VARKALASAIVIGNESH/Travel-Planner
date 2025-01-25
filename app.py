@@ -1,8 +1,12 @@
+import os
 from flask import Flask, render_template, request, jsonify, send_file, session
 import requests
 import io
 
 app = Flask(__name__)
+
+# Set the secret key for session management using environment variable
+app.secret_key = os.getenv('FLASK_SECRET_KEY', '696969')  # 'your_random_secret_key' as fallback
 
 # API Configuration
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -80,5 +84,4 @@ def download_itinerary():
     return send_file(byte_io, as_attachment=True, download_name="itinerary.txt", mimetype="text/plain")
 
 if __name__ == "__main__":
-    app.secret_key = 'your_secret_key'  # Set the secret key for session management
     app.run(debug=True)
